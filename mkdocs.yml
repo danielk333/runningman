@@ -1,0 +1,59 @@
+site_name: runningman
+
+theme:
+  name: "material"
+  # logo: assets/logo.png
+  # favicon: assets/favicon.png
+  features:
+    - navigation.instant
+    - navigation.path
+    - navigation.top
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: "#002d72"
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: "#002d72"
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+  icon:
+    repo: fontawesome/brands/github
+
+
+repo_url: https://github.com/danielk333/runningman
+
+extra_css:
+  - assets/style.css
+
+plugins:
+  - search
+  - section-index
+  - gen-files:
+      scripts:
+        - scripts/generate_api_docs.py
+  - literate-nav:
+      nav_file: nav.md
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+            docstring_section_style: table
+            show_docstring_functions: true
+            show_docstring_modules: true
+            show_docstring_description: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting_started.md
+  - Examples:
+    - examples/index.md
+  - Reference: reference/
