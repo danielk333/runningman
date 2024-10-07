@@ -1,0 +1,37 @@
+# gitlab pages
+public
+
+#editor
+*.sublime*
+*.code*
+.vscode
+*~
+.*.sw[op]
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+wheelhouse/
+wheels/
+*.egg-info/
+*.egg
+build/
+
+# Unit test / coverage reports
+.pytest_cache/
+
+# pyenv
+.python-version
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
