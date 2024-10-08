@@ -64,7 +64,7 @@ class NewClosedFiles(Provider):
     def __init__(self, path, recursive=True):
         super().__init__(function=None)
         logger.debug(f"Init {self}")
-        self.event_handler = NewFiles.EventHandler(self.queues)
+        self.event_handler = NewClosedFiles.EventHandler(self.queues)
         self.path = path
         self.recursive = recursive
 
