@@ -4,8 +4,10 @@ import runningman as rm
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s: %(message)s",
-    level=logging.DEBUG,
 )
+lib_logger = logging.getLogger("runningman")
+lib_logger.setLevel(logging.DEBUG)
+
 
 HERE = pathlib.Path(__file__).parent
 
