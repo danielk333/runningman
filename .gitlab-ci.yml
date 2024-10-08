@@ -48,12 +48,12 @@ stages:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
 
-python:
-  extends: .pytest
+# python:
+#   extends: .pytest
 
-python3.10:
-  extends: .pytest
-  image: python:3.10
+# python3.10:
+#   extends: .pytest
+#   image: python:3.10
 
 ###############
 ## Releasing ##
