@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from enum import Enum
 from types import FunctionType
 from multiprocessing import Process, Queue
 from threading import Thread, Event
@@ -8,32 +7,9 @@ import logging
 
 from ..triggers import Trigger
 from ..providers import Provider
+from runningman.status import ServiceStatus, process_status
 
 logger = logging.getLogger(__name__)
-
-
-class ServiceStatus(Enum):
-    NotStarted = 0
-    Started = 1
-    Stopped = 2
-
-
-class ProcessStatus(Enum):
-    NotStarted = 0
-    Running = 1
-    Completed = 2
-    Failed = 3
-
-
-def process_status(proc):
-    if proc is None:
-        return ProcessStatus.NotStarted
-    elif proc.is_alive():
-        return ProcessStatus.Running
-    elif proc.exitcode != 0 and proc.exitcode is not None:
-        return ProcessStatus.Failed
-    else:
-        return ProcessStatus.Completed
 
 
 class BaseService:

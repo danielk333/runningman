@@ -1,6 +1,8 @@
 import logging
 from multiprocessing import Process
 
+from runningman.status import ProviderStatus, process_status
+
 logger = logging.getLogger(__name__)
 
 
@@ -11,6 +13,7 @@ class Provider:
         self.kwargs = kwargs
         self.args = args
         self.queues = []
+        self.status = ProviderStatus.NotStarted
 
     def start(self):
         logger.debug(f"Starting {self}")
@@ -21,11 +24,21 @@ class Provider:
             daemon=True
         )
         self.proc.start()
+        self.status = ProviderStatus.Started
 
     def stop(self):
         logger.debug(f"Stopping {self}")
         self.proc.terminate()
         self.proc.join()
+        self.status = ProviderStatus.Stopped
+
+    def get_status(self):
+        return self.status, process_status(self.proc)
+
+    def get_exitcode(self):
+        if self.proc is None:
+            return None
+        return self.proc.exitcode
 
 
 class TriggeredProvider(Provider):
@@ -37,6 +50,7 @@ class TriggeredProvider(Provider):
         logger.debug(f"Starting {self}")
         for t in self.triggers:
             t.targets.append(self.execute)
+        self.status = ProviderStatus.Started
 
     def stop(self):
         logger.debug(f"Stopping {self}")
@@ -45,6 +59,7 @@ class TriggeredProvider(Provider):
         if self.proc is not None and self.proc.is_alive():
             self.proc.terminate()
             self.proc.join()
+        self.status = ProviderStatus.Stopped
 
     def execute(self):
         logger.debug(f"Executing {self}")

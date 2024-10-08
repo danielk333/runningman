@@ -1,9 +1,12 @@
 import logging
 from pathlib import Path
-from .provider import Provider
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
+
+from .provider import Provider
+from runningman.status import ProviderStatus, thread_status
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,11 +70,16 @@ class NewClosedFiles(Provider):
 
     def start(self):
         logger.debug(f"Starting {self}")
-        self.observer = Observer()
-        self.observer.schedule(self.event_handler, self.path, recursive=self.recursive)
-        self.observer.start()
+        self.proc = Observer()
+        self.proc.schedule(self.event_handler, self.path, recursive=self.recursive)
+        self.proc.start()
+        self.status = ProviderStatus.Started
 
     def stop(self):
         logger.debug(f"Stopping {self}")
-        self.observer.stop()
-        self.observer.join()
+        self.proc.stop()
+        self.proc.join()
+        self.status = ProviderStatus.Stopped
+
+    def get_status(self):
+        return self.status, thread_status(self.proc)

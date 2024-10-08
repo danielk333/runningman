@@ -29,10 +29,10 @@ class FileCreated(Trigger):
         pass
 
     def start(self):
-        self.observer = Observer()
-        self.observer.schedule(self.event_handler, self.path, recursive=True)
-        self.observer.start()
+        self.runner = Observer()
+        self.runner.schedule(self.event_handler, self.path, recursive=True)
+        self.runner.start()
 
     def stop(self):
-        self.observer.stop()
-        self.observer.join()
+        self.runner.stop()
+        self.runner.join()

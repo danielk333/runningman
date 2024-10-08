@@ -7,9 +7,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_ADDRESS = ("localhost", 9876)
+
 
 class Manager:
-    def __init__(self, interface_password=None, control_address=("localhost", 9876)):
+    def __init__(self, interface_password=None, control_address=DEFAULT_ADDRESS):
         self.interface_password = interface_password
         self.control_address = control_address
 
@@ -17,29 +19,53 @@ class Manager:
         self.services = {}
         self.triggers = {}
         self.providers = {}
+        self.component_map = {
+            "service": self.services,
+            "trigger": self.triggers,
+            "provider": self.providers,
+        }
         self.comand_map = {
-            "start": self.start_service,
-            "stop": self.stop_service,
-            "restart": self.restart_service,
-            "status": self.status_service,
+            "start": self.start_component,
+            "stop": self.stop_component,
+            "restart": self.restart_component,
+            "status": self.status_component,
+            "list": self.list_component,
         }
 
-    def status_service(self, data):
-        service = self.services[data["name"]]
-        return {"status": str(service.get_status())}
+    def get_component(self, data):
+        container = self.component_map[data["component"]]
+        component = container.get(data["name"], None)
+        return container, component
 
-    def start_service(self, data):
-        self.services[data["name"]].start()
-        return self.status_service(data)
+    def list_component(self, data):
+        container = self.component_map[data["component"]]
+        return {data["component"]: list(container.keys())}
 
-    def stop_service(self, data):
-        self.services[data["name"]].stop()
-        return self.status_service(data)
+    def status_component(self, data):
+        container, component = self.get_component(data)
+        if component is None:
+            return {"error": f"{data['component']} {data['name']} does not exist"}
+        else:
+            return {"status": str(component.get_status())}
 
-    def restart_service(self, data):
-        self.services[data["name"]].stop()
-        self.services[data["name"]].start()
-        return self.status_service(data)
+    def start_component(self, data):
+        container, component = self.get_component(data)
+        if component is not None:
+            component.start()
+        return self.status_component(data)
+
+    def stop_component(self, data):
+        container, component = self.get_component(data)
+        if component is not None:
+            component.stop()
+        return self.status_component(data)
+
+    def restart_component(self, data):
+        container, component = self.get_component(data)
+        if component is not None:
+            component.stop()
+            component.start()
+        return self.status_component(data)
 
     def start(self):
         self.exit_event.clear()
