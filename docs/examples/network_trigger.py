@@ -26,4 +26,6 @@ ctl.services["make_new_files"] = rm.TriggeredService(
     providers=[],
 )
 
+print("NOW RUN:")
+print("runningman trigger localhost 1234 my_awsome_token")
 ctl.run()

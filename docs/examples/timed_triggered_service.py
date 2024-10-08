@@ -27,7 +27,7 @@ ctl.triggers["my_cron"] = rm.triggers.Cron(
     cron="*/1 * * * *",
     trigger_directly=False,
 )
-ctl.services["make_new_files"] = rm.TriggeredService(
+ctl.services["say_hello"] = rm.TriggeredService(
     function=say_hello,
     kwargs={"name": args.name},
     triggers=[
