@@ -2,8 +2,8 @@ site_name: runningman
 
 theme:
   name: "material"
-  # logo: assets/logo.png
-  # favicon: assets/favicon.png
+  logo: assets/logo.jpg
+  favicon: assets/logo.jpg
   features:
     - navigation.instant
     - navigation.path
@@ -50,10 +50,19 @@ plugins:
             show_docstring_functions: true
             show_docstring_modules: true
             show_docstring_description: true
+  - mkdocs-jupyter:
+      execute: false
+      include_source: True
+      ignore: ["_wip*"]
 
 nav:
   - Home: index.md
   - Getting started: getting_started.md
   - Examples:
     - examples/index.md
+    - network_control: examples/network_control.py
+    - network_trigger: examples/network_trigger.py
+    - timed_triggered_service: examples/timed_triggered_service.py
+    - triggered_provider_with_service: examples/triggered_provider_with_service.py
+    - watch_folder_provider: examples/watch_folder_provider.py
   - Reference: reference/
