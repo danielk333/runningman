@@ -1,5 +1,6 @@
 import logging
 from multiprocessing import Process
+from threading import Thread
 
 from runningman.status import ProviderStatus, process_status
 
@@ -42,9 +43,11 @@ class Provider:
 
 
 class TriggeredProvider(Provider):
-    def __init__(self, function, triggers, args=(), kwargs = {}):
+    def __init__(self, function, triggers, args=(), kwargs = {}, callback=None):
         super().__init__(function, args=args, kwargs=kwargs)
         self.triggers = triggers
+        self.callback = callback
+        self.callback_proc = None
 
     def start(self):
         logger.debug(f"Starting {self}")
@@ -72,3 +75,10 @@ class TriggeredProvider(Provider):
             daemon=True,
         )
         self.proc.start()
+        if self.callback is not None:
+            self.callback_proc = Thread(target=self.callback_handler)
+            self.callback_proc.start()
+
+    def callback_handler(self):
+        self.proc.join()
+        self.callback()
