@@ -1,7 +1,7 @@
 from threading import Thread, Event
 import zmq
 import zmq.auth
-# from zmq.auth.thread import ThreadAuthenticator
+from zmq.auth.thread import ThreadAuthenticator
 import signal
 import logging
 
@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class Manager:
-    def __init__(self, interface_authkey=None, control_address=("localhost", 9876)):
-        self.interface_authkey = interface_authkey
+    def __init__(self, interface_password=None, control_address=("localhost", 9876)):
+        self.interface_password = interface_password
         self.control_address = control_address
 
         self.exit_event = Event()
@@ -26,7 +26,7 @@ class Manager:
 
     def status_service(self, data):
         service = self.services[data["name"]]
-        return {"status": str(service.check_status())}
+        return {"status": str(service.get_status())}
 
     def start_service(self, data):
         self.services[data["name"]].start()
@@ -102,20 +102,25 @@ class Manager:
     def control_interface(self):
         logger.debug(f"Manager::Setting up zmq interface on {self.control_address}")
         context = zmq.Context()
+        if self.interface_password is not None:
+            auth = ThreadAuthenticator(context)
+            auth.start()
+            auth.configure_plain(
+                domain="*",
+                passwords={
+                    "admin": self.interface_password,
+                },
+            )
+            logger.debug("Manager::Setting up zmq plain auth")
+        else:
+            auth = None
+
         server = context.socket(zmq.REP)
+        if auth is not None:
+            server.plain_server = True
         host, port = self.control_address
         server.bind(f"tcp://{host}:{port}")
 
-        # TODO proper pwd handling and allows
-        # TODO https://zeromq.org/socket-api/#exclusive-pair-pattern ?
-        # auth = ThreadAuthenticator(context)
-        # auth.start()
-        # auth.configure_plain(
-        #     domain="*",
-        #     passwords={
-        #         "admin": "secret",
-        #     },
-        # )
         while not self.exit_event.is_set():
             try:
                 request = server.recv_json(zmq.NOBLOCK)

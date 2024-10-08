@@ -12,11 +12,28 @@ from ..providers import Provider
 logger = logging.getLogger(__name__)
 
 
-class Status(Enum):
+class ServiceStatus(Enum):
+    NotStarted = 0
+    Started = 1
+    Stopped = 2
+
+
+class ProcessStatus(Enum):
     NotStarted = 0
     Running = 1
     Completed = 2
     Failed = 3
+
+
+def process_status(proc):
+    if proc is None:
+        return ProcessStatus.NotStarted
+    elif proc.is_alive():
+        return ProcessStatus.Running
+    elif proc.exitcode != 0 and proc.exitcode is not None:
+        return ProcessStatus.Failed
+    else:
+        return ProcessStatus.Completed
 
 
 class BaseService:
@@ -34,6 +51,7 @@ class BaseService:
         self.function = function
         self.runner = None
         self.kwargs = kwargs
+        self.status = ServiceStatus.NotStarted
 
     @abstractmethod
     def start(self):
@@ -46,6 +64,14 @@ class BaseService:
     @abstractmethod
     def execute(self):
         pass
+
+    def get_status(self):
+        return self.status, process_status(self.proc)
+
+    def get_exitcode(self):
+        if self.proc is None:
+            return None
+        return self.proc.exitcode
 
 
 class Service(BaseService):
@@ -63,6 +89,7 @@ class Service(BaseService):
         self.execute()
         for p in self.providers:
             p.queues.append(self.input_queue)
+        self.status = ServiceStatus.Started
 
     def stop(self):
         logger.debug(f"Stopping {self}")
@@ -70,6 +97,7 @@ class Service(BaseService):
             p.queues.remove(self.input_queue)
         self.proc.terminate()
         self.proc.join()
+        self.status = ServiceStatus.Stopped
 
     def execute(self):
         self.proc = Process(
@@ -79,17 +107,6 @@ class Service(BaseService):
             daemon=True,
         )
         self.proc.start()
-
-    def check_status(self):
-        # TODO: make this better
-        if self.proc is None:
-            return Status.NotStarted
-        elif self.proc.is_alive():
-            return Status.Running
-        elif self.proc.exitcode != 0 and self.proc.exitcode is not None:
-            return Status.Failed
-        else:
-            return Status.Completed
 
 
 class TriggeredService(BaseService):
@@ -116,6 +133,7 @@ class TriggeredService(BaseService):
             t.targets.append(self.execute)
         for p in self.providers:
             p.queues.append(self.input_queue)
+        self.status = ServiceStatus.Started
 
     def stop(self):
         logger.debug(f"Stopping {self}")
@@ -126,6 +144,7 @@ class TriggeredService(BaseService):
         if self.runner is not None and self.runner.is_alive():
             self.proc.terminate()
         self.exit_event.set()
+        self.status = ServiceStatus.Stopped
 
     def execute(self):
         if self.runner is not None and self.runner.is_alive():
@@ -159,14 +178,3 @@ class TriggeredService(BaseService):
             )
             self.proc.start()
             self.proc.join()
-
-    def check_status(self):
-        # TODO: make this better
-        if self.proc is None:
-            return Status.NotStarted
-        elif self.proc.is_alive():
-            return Status.Running
-        elif self.proc.exitcode != 0 and self.proc.exitcode is not None:
-            return Status.Failed
-        else:
-            return Status.Completed
