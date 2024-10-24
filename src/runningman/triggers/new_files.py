@@ -1,12 +1,11 @@
-import logging
+import os
 from pathlib import Path
+from typing import Union
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from .trigger import Trigger
-
-logger = logging.getLogger(__name__)
 
 
 class FileCreated(Trigger):
@@ -27,15 +26,16 @@ class FileCreated(Trigger):
         targets : list
             A list of target functions to invoke when a file creation event is detected.
         """
-        def __init__(self, targets):
+        def __init__(self, targets, logger):
             self.targets = targets
+            self.logger = logger
 
         def on_created(self, event: FileSystemEvent) -> None:
-            logger.debug(f"Pulling the trigger from {self}")
+            self.logger.debug(f"{self.__class__.__name__}.on_created: Pulling the trigger")
             for target in self.targets:
                 target()
 
-    def __init__(self, path):
+    def __init__(self, path: Union[str, bytes, os.PathLike]):
         """
         Parameters
         ----------

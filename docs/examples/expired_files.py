@@ -3,10 +3,6 @@ from datetime import datetime
 import pathlib
 import runningman as rm
 
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s: %(message)s",
-    level=logging.INFO,
-)
 
 HERE = pathlib.Path(__file__).parent
 
@@ -61,6 +57,12 @@ ctl.services["remove_old_files"] = rm.TriggeredService(
     providers=[ctl.providers["old_files"]],
 )
 
+ctl.setup_logging(
+    log_folder=HERE / "logs",
+    file_level=logging.DEBUG,
+    term_level=logging.INFO,
+    logger_level=logging.DEBUG,
+)
 ctl.run()
 
 for file in (HERE / "data").glob("test*.file"):

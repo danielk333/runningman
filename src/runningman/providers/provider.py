@@ -4,11 +4,11 @@ from threading import Thread
 
 from runningman.status import ProviderStatus, process_status
 
-logger = logging.getLogger(__name__)
-
 
 class Provider:
     def __init__(self, function, args=(), kwargs = {}):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger.debug("Init")
         self.function = function
         self.proc = None
         self.kwargs = kwargs
@@ -17,10 +17,10 @@ class Provider:
         self.status = ProviderStatus.NotStarted
 
     def start(self):
-        logger.debug(f"Starting {self}")
+        self.logger.debug(f"Starting with {len(self.queues)} queues")
         self.proc = Process(
             target=self.function,
-            args=(self.queues,) + self.args,
+            args=(self.queues, self.logger) + self.args,
             kwargs=self.kwargs,
             daemon=True
         )
@@ -28,7 +28,7 @@ class Provider:
         self.status = ProviderStatus.Started
 
     def stop(self):
-        logger.debug(f"Stopping {self}")
+        self.logger.debug("Stopping")
         self.proc.terminate()
         self.proc.join()
         self.status = ProviderStatus.Stopped
@@ -50,13 +50,13 @@ class TriggeredProvider(Provider):
         self.callback_proc = None
 
     def start(self):
-        logger.debug(f"Starting {self}")
+        self.logger.debug(f"Starting with {len(self.queues)} queues")
         for t in self.triggers:
             t.targets.append(self.execute)
         self.status = ProviderStatus.Started
 
     def stop(self):
-        logger.debug(f"Stopping {self}")
+        self.logger.debug("Stopping")
         for t in self.triggers:
             t.targets.remove(self.execute)
         if self.proc is not None and self.proc.is_alive():
@@ -65,12 +65,12 @@ class TriggeredProvider(Provider):
         self.status = ProviderStatus.Stopped
 
     def execute(self):
-        logger.debug(f"Executing {self}")
+        self.logger.debug("Executing")
         if self.proc is not None and self.proc.is_alive():
             return
         self.proc = Process(
             target=self.function,
-            args=(self.queues,) + self.args,
+            args=(self.queues, self.logger) + self.args,
             kwargs=self.kwargs,
             daemon=True,
         )

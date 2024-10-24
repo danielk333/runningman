@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -8,24 +7,20 @@ from .provider import Provider
 from runningman.status import ProviderStatus, thread_status
 
 
-logger = logging.getLogger(__name__)
-
-
 class NewFiles(Provider):
 
     class EventHandler(FileSystemEventHandler):
-        def __init__(self, queues):
+        def __init__(self, queues, logger):
+            self.logger = logger
             self.queues = queues
 
         def on_created(self, event: FileSystemEvent) -> None:
-            logger.debug(f"Providing {event.src_path} from {self}")
+            self.logger.debug(f"Providing {event.src_path}")
             for q in self.queues:
                 q.put((Path(event.src_path),))
 
     def __init__(self, path, recursive=True):
         super().__init__(function=None)
-        logger.debug(f"Init {self}")
-        self.event_handler = NewFiles.EventHandler(self.queues)
         self.path = path
         self.recursive = recursive
 
@@ -33,13 +28,14 @@ class NewFiles(Provider):
         pass
 
     def start(self):
-        logger.debug(f"Starting {self}")
+        self.logger.debug("Starting")
+        self.event_handler = NewFiles.EventHandler(self.queues, self.logger)
         self.observer = Observer()
         self.observer.schedule(self.event_handler, self.path, recursive=self.recursive)
         self.observer.start()
 
     def stop(self):
-        logger.debug(f"Stopping {self}")
+        self.logger.debug("Stopping")
         self.observer.stop()
         self.observer.join()
 
@@ -47,7 +43,8 @@ class NewFiles(Provider):
 class NewClosedFiles(Provider):
 
     class EventHandler(FileSystemEventHandler):
-        def __init__(self, queues):
+        def __init__(self, queues, logger):
+            self.logger = logger
             self.queues = queues
             self.pending = {}  # Use hash map for speed
 
@@ -58,7 +55,7 @@ class NewClosedFiles(Provider):
             pending = self.pending.pop(event.src_path, False)
             if not pending:
                 return
-            logger.debug(f"Providing {event.src_path} from {self}")
+            self.logger.debug(f"Providing {event.src_path}")
             for q in self.queues:
                 q.put((Path(event.src_path),))
 
@@ -70,8 +67,6 @@ class NewClosedFiles(Provider):
 
     def __init__(self, path, recursive=True):
         super().__init__(function=None)
-        logger.debug(f"Init {self}")
-        self.event_handler = NewClosedFiles.EventHandler(self.queues)
         self.path = path
         self.recursive = recursive
 
@@ -79,14 +74,15 @@ class NewClosedFiles(Provider):
         pass
 
     def start(self):
-        logger.debug(f"Starting {self}")
+        self.logger.debug("Starting")
+        self.event_handler = NewClosedFiles.EventHandler(self.queues, self.logger)
         self.proc = Observer()
         self.proc.schedule(self.event_handler, self.path, recursive=self.recursive)
         self.proc.start()
         self.status = ProviderStatus.Started
 
     def stop(self):
-        logger.debug(f"Stopping {self}")
+        self.logger.debug("Stopping")
         self.proc.stop()
         self.proc.join()
         self.status = ProviderStatus.Stopped
@@ -108,7 +104,8 @@ class NewClosedFileSet(Provider):
     """
 
     class EventHandler(FileSystemEventHandler):
-        def __init__(self, queues, set_identifier, set_size):
+        def __init__(self, queues, set_identifier, set_size, logger):
+            self.logger = logger
             self.set_identifier = set_identifier
             self.set_size = set_size
             self.queues = queues
@@ -131,7 +128,7 @@ class NewClosedFileSet(Provider):
 
             if len(self.sets[set_id]) == self.set_size:
                 file_set = self.sets.pop(set_id)
-                logger.debug(f"Providing {event.src_path} from {self}")
+                self.logger.debug(f"Providing {event.src_path}")
                 for q in self.queues:
                     q.put((file_set, ))
 
@@ -143,12 +140,8 @@ class NewClosedFileSet(Provider):
 
     def __init__(self, path, set_identifier, set_size, recursive=True):
         super().__init__(function=None)
-        logger.debug(f"Init {self}")
-        self.event_handler = NewClosedFileSet.EventHandler(
-            self.queues,
-            set_identifier,
-            set_size,
-        )
+        self.set_identifier = set_identifier
+        self.set_size = set_size
         self.path = path
         self.recursive = recursive
 
@@ -156,14 +149,19 @@ class NewClosedFileSet(Provider):
         pass
 
     def start(self):
-        logger.debug(f"Starting {self}")
+        self.logger.debug("Starting")
+        self.event_handler = NewClosedFileSet.EventHandler(
+            self.queues,
+            self.set_identifier,
+            self.set_size,
+        )
         self.proc = Observer()
         self.proc.schedule(self.event_handler, self.path, recursive=self.recursive)
         self.proc.start()
         self.status = ProviderStatus.Started
 
     def stop(self):
-        logger.debug(f"Stopping {self}")
+        self.logger.debug("Stopping")
         self.proc.stop()
         self.proc.join()
         self.status = ProviderStatus.Stopped

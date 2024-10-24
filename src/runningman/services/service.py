@@ -9,8 +9,6 @@ from ..triggers import Trigger
 from ..providers import Provider
 from runningman.status import ServiceStatus, process_status
 
-logger = logging.getLogger(__name__)
-
 
 class BaseService:
     """Base class to make sure signature is correct.
@@ -21,6 +19,7 @@ class BaseService:
         providers: list[Provider],
         kwargs: dict = {},
     ):
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.providers = providers
         self.input_queue = Queue()
         self.proc = None
@@ -61,14 +60,14 @@ class Service(BaseService):
     """
 
     def start(self):
-        logger.debug(f"Starting {self}")
+        self.logger.debug("Starting")
         self.execute()
         for p in self.providers:
             p.queues.append(self.input_queue)
         self.status = ServiceStatus.Started
 
     def stop(self):
-        logger.debug(f"Stopping {self}")
+        self.logger.debug("Stopping")
         for p in self.providers:
             p.queues.remove(self.input_queue)
         self.proc.terminate()
@@ -76,6 +75,7 @@ class Service(BaseService):
         self.status = ServiceStatus.Stopped
 
     def execute(self):
+        self.logger.debug("Executing")
         self.proc = Process(
             target=self.function,
             args=(self.input_queue, ),
@@ -104,7 +104,7 @@ class TriggeredService(BaseService):
         self.exit_event = Event()
 
     def start(self):
-        logger.debug(f"Starting {self}")
+        self.logger.debug("Starting")
         for t in self.triggers:
             t.targets.append(self.execute)
         for p in self.providers:
@@ -112,7 +112,7 @@ class TriggeredService(BaseService):
         self.status = ServiceStatus.Started
 
     def stop(self):
-        logger.debug(f"Stopping {self}")
+        self.logger.debug("Stopping")
         for t in self.triggers:
             t.targets.remove(self.execute)
         for p in self.providers:
@@ -123,6 +123,7 @@ class TriggeredService(BaseService):
         self.status = ServiceStatus.Stopped
 
     def execute(self):
+        self.logger.debug("Executing")
         if self.runner is not None and self.runner.is_alive():
             return
         self.exit_event.clear()

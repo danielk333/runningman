@@ -5,6 +5,8 @@ logger = logging.getLogger(__name__)
 
 
 def send_control_message(host, port, command, data, timeout=None, password=None):
+    """Function to send a control message to a Manager instance trough a ZMQ socket.
+    """
     context = zmq.Context()
     if timeout is not None:
         context.setsockopt(zmq.SNDTIMEO, timeout)

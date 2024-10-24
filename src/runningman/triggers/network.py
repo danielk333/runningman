@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 import zmq
 import struct
 from .trigger import Trigger
@@ -9,7 +10,7 @@ TRIGGERED = struct.pack("?", True)
 NOT_TRIGGERED = struct.pack("?", False)
 
 
-def send_trigger(host, port, token, timeout=None):
+def send_trigger(host: str, port: int, token: str, timeout: Optional[int] = None):
     context = zmq.Context()
     if timeout is not None:
         context.setsockopt(zmq.SNDTIMEO, timeout)
@@ -17,12 +18,13 @@ def send_trigger(host, port, token, timeout=None):
     client = context.socket(zmq.REQ)
     client.connect(f"tcp://{host}:{port}")
     client.send(token.encode("utf8"))
+    logger.debug(f"Sending trigger '{token=}' to tcp://{host}:{port}")
     result = client.recv()
     return result
 
 
 class Network(Trigger):
-    def __init__(self, host, port, token):
+    def __init__(self, host: str, port: int, token: str):
         super().__init__()
         self.host = host
         self.port = port
@@ -42,7 +44,7 @@ class Network(Trigger):
                 request = server.recv()
             except zmq.Again:
                 continue
-            logger.info(f"Network(Trigger)::run {request=}")
+            self.logger.info(f"::run {request=}")
             token = request.decode("utf8")
             if token != self.token:
                 server.send(NOT_TRIGGERED)

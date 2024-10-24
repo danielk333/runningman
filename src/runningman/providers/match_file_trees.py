@@ -1,8 +1,5 @@
-import logging
 from pathlib import Path
 from .provider import TriggeredProvider
-
-logger = logging.getLogger(__name__)
 
 
 class MatchFileTree(TriggeredProvider):
@@ -15,7 +12,9 @@ class MatchFileTree(TriggeredProvider):
         super().__init__(MatchFileTree.run, triggers, args=args, kwargs=kwargs)
 
     @staticmethod
-    def run(queues, source_path, target_path, pattern="*", recursive=True, name_modifier=None):
+    def run(
+        queues, logger, source_path, target_path, pattern="*", recursive=True, name_modifier=None
+    ):
         if recursive:
             src_files = source_path.rglob(pattern)
         else:
@@ -29,6 +28,6 @@ class MatchFileTree(TriggeredProvider):
             args = (file, exp_pth)
             if exp_pth.is_file():
                 continue
+            logger.debug(f"Providing {file}")
             for q in queues:
-                logger.debug(f"Providing {file} from 'MatchFileTree' to {q}")
                 q.put(args)

@@ -1,15 +1,17 @@
 from typing import Optional
 from datetime import datetime
-import logging
 from croniter import croniter
 
 from .trigger import Trigger
 
-logger = logging.getLogger(__name__)
-
 
 class Cron(Trigger):
-    def __init__(self, cron: str, start: Optional[datetime] = None, trigger_directly: bool = False):
+    def __init__(
+        self,
+        cron: str,
+        start: Optional[datetime] = None,
+        trigger_directly: bool = False,
+    ):
         super().__init__()
         if start is None:
             start = datetime.now()
@@ -21,7 +23,7 @@ class Cron(Trigger):
         while not self.exit_event.is_set():
             # pull the triggers
             if not self.__first_iter:
-                logger.debug(f"Pulling the trigger from {self}")
+                self.logger.debug(f"Pulling the trigger from {self}")
                 for target in self.targets:
                     target()
             else:

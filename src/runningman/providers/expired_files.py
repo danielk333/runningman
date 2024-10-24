@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from datetime import datetime
 import fnmatch
@@ -9,8 +8,6 @@ from .provider import TriggeredProvider
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
-
-logger = logging.getLogger(__name__)
 
 
 def get_file_time(file):
@@ -38,7 +35,8 @@ class ExpiredFiles(TriggeredProvider):
     """
 
     class EventHandler(FileSystemEventHandler):
-        def __init__(self, pattern):
+        def __init__(self, pattern, logger):
+            self.logger = logger
             self.new_files = []
             self.pattern = pattern
             self.pending = {}  # Use hash map for speed
@@ -80,7 +78,6 @@ class ExpiredFiles(TriggeredProvider):
             Whether to scan directories recursively (default is True).
         """
         super().__init__(ExpiredFiles.run, triggers, callback=self.filter_files_callback)
-        logger.debug(f"Init {self}")
         self.path = path
         self.recursive = recursive
         self.max_age_seconds = max_age_seconds
@@ -88,7 +85,7 @@ class ExpiredFiles(TriggeredProvider):
 
     def start(self):
         self.populate_files()
-        self.event_handler = ExpiredFiles.EventHandler(self.pattern)
+        self.event_handler = ExpiredFiles.EventHandler(self.pattern, self.logger)
         self.observer = Observer()
         self.observer.schedule(self.event_handler, self.path, recursive=self.recursive)
         self.observer.start()
@@ -127,7 +124,7 @@ class ExpiredFiles(TriggeredProvider):
             self.files = list(self.path.glob(self.pattern))
 
     @staticmethod
-    def run(queues, files, files_pushed, max_age_seconds):
+    def run(queues, logger, files, files_pushed, max_age_seconds):
         """
         Check if files have exceeded the max age and push them to the queues if they have.
 
@@ -146,6 +143,7 @@ class ExpiredFiles(TriggeredProvider):
         for ind, file in enumerate(files):
             files_pushed[ind] = (now - get_file_time(file)).total_seconds() > max_age_seconds
             if files_pushed[ind]:
+                logger.debug(f"Providing {file}")
                 for q in queues:
                     q.put((file,))
 
@@ -174,10 +172,9 @@ class SimpleExpiredFiles(TriggeredProvider):
         args = (Path(path), max_age_seconds)
         kwargs = dict(pattern=pattern, recursive=recursive)
         super().__init__(ExpiredFiles.run, triggers, args=args, kwargs=kwargs)
-        logger.debug(f"Init {self}")
 
     @staticmethod
-    def run(queues, path, max_age_seconds, pattern="*", recursive=True):
+    def run(queues, logger, path, max_age_seconds, pattern="*", recursive=True):
         """
         Check for expired files and push them to the queues if they have exceeded the max age.
 
@@ -200,8 +197,9 @@ class SimpleExpiredFiles(TriggeredProvider):
             dt = (now - datetime.fromtimestamp(file.stat().st_mtime)).total_seconds()
             if dt < max_age_seconds:
                 continue
+            logger.debug(f"Providing {file}")
             for q in queues:
-                q.put(file)
+                q.put((file, ))
 
 
 class GlobFiles(TriggeredProvider):
@@ -225,14 +223,14 @@ class GlobFiles(TriggeredProvider):
         args = (Path(path),)
         kwargs = dict(pattern=pattern, recursive=recursive)
         super().__init__(GlobFiles.run, triggers, args=args, kwargs=kwargs)
-        logger.debug(f"Init {self}")
 
     @staticmethod
-    def run(queues, path, pattern="*", recursive=True):
+    def run(queues, logger, path, pattern="*", recursive=True):
         """
         Search for files that match the pattern and push them to the queues.
         """
         files = path.rglob(pattern) if recursive else path.glob(pattern)
         for file in files:
+            logger.debug(f"Providing {file}")
             for q in queues:
-                q.put(file)
+                q.put((file, ))

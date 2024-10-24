@@ -1,15 +1,15 @@
-import logging
 import time
 from .trigger import Trigger
-
-logger = logging.getLogger(__name__)
 
 
 class Timed(Trigger):
     """
     A trigger that activates at a regular time interval.
     """
-    def __init__(self, interval_sec: float, trigger_directly: bool = False):
+
+    def __init__(
+        self, interval_sec: float, trigger_directly: bool = False,
+    ):
         """
         Parameters
         ----------
@@ -28,7 +28,7 @@ class Timed(Trigger):
             t0 = time.time()
             # pull the triggers
             if not self.__first_iter:
-                logger.debug(f"Pulling the trigger from {self}")
+                self.logger.debug("Pulling the trigger")
                 for target in self.targets:
                     target()
             else:
