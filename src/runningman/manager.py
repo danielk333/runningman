@@ -323,7 +323,7 @@ class Manager:
 
         The loop runs until `exit_event` is set.
         """
-        self.logger.debug(f"control_interface::Setting up zmq interface on {self.control_address}")
+        self.logger.debug(f"Setting up zmq interface on {self.control_address}")
         context = zmq.Context()
         if self.interface_password is not None:
             auth = ThreadAuthenticator(context)
@@ -334,7 +334,7 @@ class Manager:
                     "admin": self.interface_password,
                 },
             )
-            self.logger.debug("control_interface::Setting up zmq plain auth")
+            self.logger.debug("Setting up zmq plain auth")
         else:
             auth = None
 
@@ -350,7 +350,7 @@ class Manager:
             except zmq.Again:
                 self.exit_event.wait(0.2)
                 continue
-            self.logger.info(f"control_interface::received {request=}")
+            self.logger.info(f"received {request=}")
             cmd = request["command"]
             if cmd not in self.comand_map:
                 server.send_json({"command": f"command {cmd} does not exist"})
@@ -367,4 +367,4 @@ class Manager:
             server.send_json(response)
 
         # auth.stop()
-        self.logger.debug("control_interface::Exiting control interface")
+        self.logger.debug("Exiting control interface")
