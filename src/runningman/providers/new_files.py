@@ -154,6 +154,7 @@ class NewClosedFileSet(Provider):
             self.queues,
             self.set_identifier,
             self.set_size,
+            self.logger,
         )
         self.proc = Observer()
         self.proc.schedule(self.event_handler, self.path, recursive=self.recursive)
