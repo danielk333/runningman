@@ -107,6 +107,12 @@ class Manager:
             "status": self.status_component,
             "list": self.list_component,
         }
+        self.external_loggers = {}
+
+    def add_external_logger(self, logger, name=None):
+        if name is None:
+            name = logger.name
+        self.external_loggers[name] = logger
 
     def setup_logging(
         self,
@@ -145,6 +151,9 @@ class Manager:
             cmp.logger = logging.getLogger(get_logger_name(cmp, name))
             cmp.logger._fname = get_logger_fname(cmp, name)
 
+        for key, logger in self.external_loggers.items():
+            logger._fname = f"external_{key}"
+
         all_loggers = chain(
             [
                 ("runningman", package_logger),
@@ -153,6 +162,7 @@ class Manager:
             [(cmp.logger._fname, cmp.logger) for name, cmp in self.services.items()],
             [(cmp.logger._fname, cmp.logger) for name, cmp in self.triggers.items()],
             [(cmp.logger._fname, cmp.logger) for name, cmp in self.providers.items()],
+            [(logger._fname, logger) for name, logger in self.external_loggers.items()],
         )
 
         for fname, logger in all_loggers:
