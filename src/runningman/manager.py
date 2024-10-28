@@ -23,6 +23,10 @@ def get_logger_name(obj, name):
     return f"{obj.__class__.__name__}({name})"
 
 
+def get_logger_fname(obj, name):
+    return f"{obj.__class__.__name__}__{name}__"
+
+
 def check_file_handler(logger: logging.Logger) -> bool:
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
@@ -130,6 +134,7 @@ class Manager:
 
         if name is not None:
             self.logger = logging.getLogger(get_logger_name(self, name))
+        self.logger._fname = get_logger_fname(self, self.logger.name)
 
         components = chain(
             self.services.items(),
@@ -138,23 +143,24 @@ class Manager:
         )
         for name, cmp in components:
             cmp.logger = logging.getLogger(get_logger_name(cmp, name))
+            cmp.logger._fname = get_logger_fname(cmp, name)
 
         all_loggers = chain(
             [
                 ("runningman", package_logger),
-                (self.logger.name, self.logger),
+                (self.logger._fname, self.logger),
             ],
-            [(cmp.logger.name, cmp.logger) for name, cmp in self.services.items()],
-            [(cmp.logger.name, cmp.logger) for name, cmp in self.triggers.items()],
-            [(cmp.logger.name, cmp.logger) for name, cmp in self.providers.items()],
+            [(cmp.logger._fname, cmp.logger) for name, cmp in self.services.items()],
+            [(cmp.logger._fname, cmp.logger) for name, cmp in self.triggers.items()],
+            [(cmp.logger._fname, cmp.logger) for name, cmp in self.providers.items()],
         )
 
-        for name, logger in all_loggers:
+        for fname, logger in all_loggers:
             logger.setLevel(logger_level)
             if log_folder is not None:
                 fh = check_file_handler(logger)
                 if force_add_handlers or fh is None:
-                    fh = logging.FileHandler(log_folder / f"{name}.log")
+                    fh = logging.FileHandler(log_folder / f"{fname}.log")
                     fmt = logging.Formatter(format_str)
                     fmt.default_time_format = datefmt
                     fmt.default_msec_format = msecfmt
