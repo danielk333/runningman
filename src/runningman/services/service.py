@@ -78,7 +78,7 @@ class Service(BaseService):
         self.logger.debug("Executing")
         self.proc = Process(
             target=self.function,
-            args=(self.input_queue, ),
+            args=(self.input_queue, self.logger),
             kwargs=self.kwargs,
             daemon=True,
         )
@@ -136,6 +136,7 @@ class TriggeredService(BaseService):
     def run_without_provider(self):
         self.proc = Process(
             target=self.function,
+            args=(self.logger, ),
             kwargs=self.kwargs,
         )
         self.proc.start()
@@ -150,7 +151,7 @@ class TriggeredService(BaseService):
                 break
             self.proc = Process(
                 target=self.function,
-                args=args,
+                args=(self.logger, ) + args,
                 kwargs=self.kwargs,
             )
             self.proc.start()

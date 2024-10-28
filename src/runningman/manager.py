@@ -20,7 +20,7 @@ def exception_handler(type, value, tb):
 
 
 def get_logger_name(obj, name):
-    return f"{obj.__class__.__name__}__{name}__"
+    return f"{obj.__class__.__name__}({name})"
 
 
 def check_file_handler(logger: logging.Logger) -> bool:
@@ -115,7 +115,7 @@ class Manager:
         force_add_handlers: bool = False,
         format_str: str = (
             "%(asctime)s - %(levelname)s - "
-            "%(threadName)s@%(name)s::%(funcName)s: %(message)s"
+            "%(name)s.%(funcName)s: %(message)s"
         ),
         datefmt: str = "%Y-%m-%d %H:%M:%S",
         msecfmt: str = "%s.%03d",
