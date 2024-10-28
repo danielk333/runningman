@@ -15,8 +15,11 @@ package_logger = logging.getLogger("runningman")
 DEFAULT_ADDRESS = ("localhost", 9876)
 
 
-def exception_handler(type, value, tb):
-    package_logger.exception(str(value))
+def exception_handler(excType, excValue, excTrackback):
+    package_logger.exception(
+        "Logging uncaught exception",
+        exc_info=(excType, excValue, excTrackback)
+    )
 
 
 def get_logger_name(obj, name):
