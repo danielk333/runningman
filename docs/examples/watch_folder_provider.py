@@ -1,29 +1,22 @@
-import logging
 import pathlib
+import logging
 import runningman as rm
-
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s: %(message)s",
-)
-lib_logger = logging.getLogger("runningman")
-lib_logger.setLevel(logging.DEBUG)
-
 
 HERE = pathlib.Path(__file__).parent
 
 
-def del_file(path):
-    print(f"del_file GOT {path=}")
+def del_file(logger, path):
+    logger.info(f"del_file GOT {path=}")
     if path.is_file():
         path.unlink()
 
 
-def touch_file(path):
+def touch_file(logger, path):
     ind = 0
     while True:
         file = path / f"test{ind}.file"
         if not file.is_file():
-            print(f"touch_file making {file=}")
+            logger.info(f"touch_file making {file=}")
             file.touch()
             break
         ind += 1
@@ -55,8 +48,9 @@ ctl.services["remove_new_files"] = rm.TriggeredService(
     providers=[ctl.providers["new_files"]],
 )
 
+ctl.setup_logging(logger_level=logging.DEBUG, term_level=logging.DEBUG)
 ctl.run()
 
 for file in (HERE / "data").glob("test*.file"):
-    print(f"removing leftover file {file}")
+    ctl.logger.info(f"removing leftover file {file}")
     file.unlink()

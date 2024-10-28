@@ -7,20 +7,20 @@ import runningman as rm
 HERE = pathlib.Path(__file__).parent
 
 
-def del_file(path):
+def del_file(logger, path):
     now = datetime.now()
     file_age = (now - datetime.fromtimestamp(path.stat().st_mtime)).total_seconds()
-    print(f"del_file GOT {path=} : {file_age=} sec")
+    logger.info(f"GOT {path.name=} : {file_age=} sec")
     if path.is_file():
         path.unlink()
 
 
-def touch_file(path):
+def touch_file(logger, path):
     ind = 0
     while True:
         file = path / f"test{ind}.file"
         if not file.is_file():
-            print(f"touch_file making {file=}")
+            logger.info(f"making {file.name=}")
             file.touch()
             break
         ind += 1
@@ -66,5 +66,5 @@ ctl.setup_logging(
 ctl.run()
 
 for file in (HERE / "data").glob("test*.file"):
-    print(f"removing leftover file {file}")
+    ctl.logger.info(f"removing leftover file {file}")
     file.unlink()

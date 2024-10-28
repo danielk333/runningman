@@ -1,20 +1,15 @@
-import logging
 import pathlib
 import runningman as rm
 
 
 HERE = pathlib.Path(__file__).parent
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s: %(message)s",
-    level=logging.INFO,
-)
 
 
-def print_arg(queue):
-    print("Start getting queue values...")
+def print_arg(queue, logger):
+    logger.info("Start getting queue values...")
     while True:
         file = queue.get()
-        print(file)
+        logger.info(f"got {file[0].name}")
 
 
 ctl = rm.Manager()
@@ -30,4 +25,5 @@ ctl.services["make_new_files"] = rm.Service(
     providers=[ctl.providers["glob"]],
 )
 
+ctl.setup_logging()
 ctl.run()

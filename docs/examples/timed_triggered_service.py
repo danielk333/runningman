@@ -1,4 +1,3 @@
-import logging
 import argparse
 import datetime
 import runningman as rm
@@ -7,13 +6,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("name")
 args = parser.parse_args()
 
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s: %(message)s",
-    level=logging.INFO,
-)
 
-
-def say_hello(name):
+def say_hello(logger, name):
     print(f"[{datetime.datetime.now()}] hello {name}")
 
 
@@ -37,4 +31,5 @@ ctl.services["say_hello"] = rm.TriggeredService(
     providers=[],
 )
 
+ctl.setup_logging()
 ctl.run()

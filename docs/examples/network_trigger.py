@@ -1,16 +1,11 @@
-import logging
 import pathlib
 import runningman as rm
 
-
 HERE = pathlib.Path(__file__).parent
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s: %(message)s",
-    level=logging.INFO,
-)
 
 
-def list_files():
+def list_files(logger):
+    logger.info("Listing now")
     for file in HERE.glob("*.py"):
         print(file.name)
 
@@ -28,4 +23,5 @@ ctl.services["make_new_files"] = rm.TriggeredService(
 
 print("NOW RUN:")
 print("runningman trigger localhost 1234 my_awsome_token")
+ctl.setup_logging()
 ctl.run()

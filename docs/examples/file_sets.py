@@ -1,31 +1,27 @@
-import logging
 import pathlib
 import runningman as rm
 from multiprocessing import Value
-from pprint import pprint
+import pprint
+import logging
 
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s: %(message)s",
-    level=logging.INFO,
-)
+set_logger = logging.getLogger("set_identifier")
 
 HERE = pathlib.Path(__file__).parent
 
 FILE_INDEX = Value("i", 0)
 
 
-def del_file(paths):
-    print("del_file GOT")
-    pprint(paths)
+def del_file(logger, paths):
+    logger.info(f"GOT {pprint.pformat(paths, indent=4)}")
     for index, path in paths.items():
         if path.is_file():
             path.unlink()
 
 
-def touch_file(path, index):
+def touch_file(logger, path, index):
     ind = index.value
     file = path / f"test_{ind}.file"
-    print(f"touch_file making {file=}")
+    logger.info(f"making {file.name=}")
     file.touch()
     with index.get_lock():
         index.value += 1
@@ -35,11 +31,12 @@ def set_identifier(file):
     num = int(file.stem.split("_")[-1])
     set_id = int(num / 7)
     set_index = num % 7
-    print(f"{set_id=}, {set_index=}")
+    set_logger.info(f"{set_id=}, {set_index=}")
     return set_id, set_index
 
 
 ctl = rm.Manager()
+ctl.add_external_logger(set_logger)
 
 ctl.triggers["fast"] = rm.triggers.Timed(
     interval_sec=1.0,
@@ -72,8 +69,9 @@ ctl.services["remove_set"] = rm.TriggeredService(
     providers=[ctl.providers["file_set"]],
 )
 
+ctl.setup_logging()
 ctl.run()
 
 for file in (HERE / "data").glob("test*.file"):
-    print(f"removing leftover file {file}")
+    ctl.logger.info(f"removing leftover file {file}")
     file.unlink()

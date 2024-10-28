@@ -13,7 +13,6 @@ runningman stop localhost 1234 hello -p
 ```
 
 """
-import logging
 import argparse
 import datetime
 import runningman as rm
@@ -26,13 +25,9 @@ args = parser.parse_args()
 
 password = getpass("Enter control server password: ")
 
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s: %(message)s",
-    level=logging.INFO,
-)
 
-
-def say_hello():
+def say_hello(logger):
+    logger.info("saying it now")
     print(f"[{datetime.datetime.now()}] hello Ben Richards")
 
 
@@ -50,4 +45,5 @@ ctl.services["hello"] = rm.TriggeredService(
     providers=[],
 )
 
+ctl.setup_logging()
 ctl.run()
