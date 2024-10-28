@@ -149,6 +149,9 @@ class NewClosedFileSet(Provider):
         pass
 
     def start(self):
+        if self.status == ProviderStatus.Started:
+            self.logger.debug("Already started")
+            return
         self.logger.debug("Starting")
         self.event_handler = NewClosedFileSet.EventHandler(
             self.queues,
@@ -162,6 +165,9 @@ class NewClosedFileSet(Provider):
         self.status = ProviderStatus.Started
 
     def stop(self):
+        if self.status == ProviderStatus.Stopped:
+            self.logger.debug("Already stopped")
+            return
         self.logger.debug("Stopping")
         self.proc.stop()
         self.proc.join()

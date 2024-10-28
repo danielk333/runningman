@@ -60,6 +60,9 @@ class Service(BaseService):
     """
 
     def start(self):
+        if self.status == ServiceStatus.Started:
+            self.logger.debug("Already started")
+            return
         self.logger.debug("Starting")
         self.execute()
         for p in self.providers:
@@ -67,6 +70,9 @@ class Service(BaseService):
         self.status = ServiceStatus.Started
 
     def stop(self):
+        if self.status == ServiceStatus.Stopped:
+            self.logger.debug("Already stopped")
+            return
         self.logger.debug("Stopping")
         for p in self.providers:
             p.queues.remove(self.input_queue)
@@ -104,6 +110,9 @@ class TriggeredService(BaseService):
         self.exit_event = Event()
 
     def start(self):
+        if self.status == ServiceStatus.Started:
+            self.logger.debug("Already started")
+            return
         self.logger.debug("Starting")
         for t in self.triggers:
             t.targets.append(self.execute)
@@ -112,6 +121,9 @@ class TriggeredService(BaseService):
         self.status = ServiceStatus.Started
 
     def stop(self):
+        if self.status == ServiceStatus.Stopped:
+            self.logger.debug("Already stopped")
+            return
         self.logger.debug("Stopping")
         for t in self.triggers:
             t.targets.remove(self.execute)

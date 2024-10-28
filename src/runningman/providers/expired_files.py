@@ -5,6 +5,7 @@ from ctypes import c_bool
 from multiprocessing import Array
 
 from .provider import TriggeredProvider
+from runningman.status import ProviderStatus
 
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
@@ -84,6 +85,9 @@ class ExpiredFiles(TriggeredProvider):
         self.pattern = pattern
 
     def start(self):
+        if self.status == ProviderStatus.Started:
+            self.logger.debug("Already started")
+            return
         self.populate_files()
         self.event_handler = ExpiredFiles.EventHandler(self.pattern, self.logger)
         self.observer = Observer()
@@ -92,6 +96,9 @@ class ExpiredFiles(TriggeredProvider):
         super().start()
 
     def stop(self):
+        if self.status == ProviderStatus.Stopped:
+            self.logger.debug("Already stopped")
+            return
         self.observer.stop()
         self.observer.join()
         super().stop()

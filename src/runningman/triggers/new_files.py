@@ -6,6 +6,7 @@ from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from .trigger import Trigger
+from runningman.status import TriggerStatus
 
 
 class FileCreated(Trigger):
@@ -46,20 +47,25 @@ class FileCreated(Trigger):
         self.path = Path(path)
         self.event_handler = FileCreated.EventHandler(self.targets)
 
-    def run(self):
-        pass
-
     def start(self):
         """
         Start the file system observer to monitor the specified path.
         """
+        if self.status == TriggerStatus.Started:
+            self.logger.debug("Already started")
+            return
         self.runner = Observer()
         self.runner.schedule(self.event_handler, self.path, recursive=True)
         self.runner.start()
+        self.status = TriggerStatus.Started
 
     def stop(self):
         """
         Stop the file system observer to monitor the specified path.
         """
+        if self.status == TriggerStatus.Stopped:
+            self.logger.debug("Already stopped")
+            return
         self.runner.stop()
         self.runner.join()
+        self.status = TriggerStatus.Stopped

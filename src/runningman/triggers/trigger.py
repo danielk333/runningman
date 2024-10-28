@@ -20,6 +20,9 @@ class Trigger:
         pass
 
     def start(self):
+        if self.status == TriggerStatus.Started:
+            self.logger.debug("Already started")
+            return
         self.logger.debug("Starting")
         self.exit_event.clear()
         self.runner = Thread(target=self.run)
@@ -27,6 +30,9 @@ class Trigger:
         self.status = TriggerStatus.Started
 
     def stop(self, timeout: Optional[float] = None):
+        if self.status == TriggerStatus.Stopped:
+            self.logger.debug("Already stopped")
+            return
         self.logger.debug("Stopping")
         self.exit_event.set()
         self.runner.join(timeout)

@@ -17,6 +17,9 @@ class Provider:
         self.status = ProviderStatus.NotStarted
 
     def start(self):
+        if self.status == ProviderStatus.Started:
+            self.logger.debug("Already started")
+            return
         self.logger.debug(f"Starting with {len(self.queues)} queues")
         self.proc = Process(
             target=self.function,
@@ -28,6 +31,9 @@ class Provider:
         self.status = ProviderStatus.Started
 
     def stop(self):
+        if self.status == ProviderStatus.Stopped:
+            self.logger.debug("Already stopped")
+            return
         self.logger.debug("Stopping")
         self.proc.terminate()
         self.proc.join()
@@ -50,12 +56,18 @@ class TriggeredProvider(Provider):
         self.callback_proc = None
 
     def start(self):
+        if self.status == ProviderStatus.Started:
+            self.logger.debug("Already started")
+            return
         self.logger.debug(f"Starting with {len(self.queues)} queues")
         for t in self.triggers:
             t.targets.append(self.execute)
         self.status = ProviderStatus.Started
 
     def stop(self):
+        if self.status == ProviderStatus.Stopped:
+            self.logger.debug("Already stopped")
+            return
         self.logger.debug("Stopping")
         for t in self.triggers:
             t.targets.remove(self.execute)
