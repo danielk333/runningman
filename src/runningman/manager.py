@@ -337,7 +337,8 @@ class Manager:
             self.logger.debug("Setting up zmq plain auth")
         else:
             auth = None
-
+        context.setsockopt(zmq.SocketOption.RCVTIMEO, 1000)
+        context.setsockopt(zmq.LINGER, 0)
         server = context.socket(zmq.REP)
         if auth is not None:
             server.plain_server = True
@@ -346,9 +347,8 @@ class Manager:
 
         while not self.exit_event.is_set():
             try:
-                request = server.recv_json(zmq.NOBLOCK)
+                request = server.recv_json()
             except zmq.Again:
-                self.exit_event.wait(0.2)
                 continue
             self.logger.info(f"received {request=}")
             cmd = request["command"]
