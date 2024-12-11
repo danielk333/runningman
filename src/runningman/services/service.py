@@ -8,6 +8,7 @@ import logging
 from ..triggers import Trigger
 from ..providers import Provider
 from runningman.status import ServiceStatus, process_status
+from runningman import wrappers
 
 
 class BaseService:
@@ -84,7 +85,7 @@ class Service(BaseService):
     def execute(self):
         self.logger.debug("Executing")
         self.proc = Process(
-            target=self.function,
+            target=wrappers.exception_handler(self.function, 1),
             args=(self.input_queue, self.logger),
             kwargs=self.kwargs,
             daemon=True,
@@ -149,7 +150,7 @@ class TriggeredService(BaseService):
 
     def run_without_provider(self):
         self.proc = Process(
-            target=self.function,
+            target=wrappers.exception_handler(self.function, 0),
             args=(self.logger,),
             kwargs=self.kwargs,
         )

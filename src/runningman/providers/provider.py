@@ -3,6 +3,7 @@ from multiprocessing import Process
 from threading import Thread
 
 from runningman.status import ProviderStatus, process_status
+from runningman import wrappers
 
 
 class Provider:
@@ -22,7 +23,7 @@ class Provider:
             return
         self.logger.debug(f"Starting with {len(self.queues)} queues")
         self.proc = Process(
-            target=self.function,
+            target=wrappers.exception_handler(self.function, 1),
             args=(self.queues, self.logger) + self.args,
             kwargs=self.kwargs,
             daemon=True
@@ -81,7 +82,7 @@ class TriggeredProvider(Provider):
         if self.proc is not None and self.proc.is_alive():
             return
         self.proc = Process(
-            target=self.function,
+            target=wrappers.exception_handler(self.function, 1),
             args=(self.queues, self.logger) + self.args,
             kwargs=self.kwargs,
             daemon=True,
