@@ -53,6 +53,9 @@ develop = [
     "mkdocs-section-index",
     "mkdocs-jupyter",
 ]
+profiling = [
+    "py-spy"
+]
 
 [project.urls]
 Documentation = "https://danielk.developer.irf.se/runningman/"
