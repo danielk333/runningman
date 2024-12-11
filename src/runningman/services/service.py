@@ -55,7 +55,8 @@ class Service(BaseService):
 
     Notes
     -----
-    The function signature must take the input queue as its first and only positional argument.
+    The function signature must only have the input queue and the logger
+    as its first and second positional arguments.
 
     """
 
