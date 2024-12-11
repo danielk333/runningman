@@ -11,8 +11,8 @@ from runningman.status import ServiceStatus, process_status
 
 
 class BaseService:
-    """Base class to make sure signature is correct.
-    """
+    """Base class to make sure signature is correct."""
+
     def __init__(
         self,
         function: FunctionType,
@@ -98,6 +98,7 @@ class TriggeredService(BaseService):
     while the providers generate a stream of inputs for the triggered
     services to handle.
     """
+
     def __init__(
         self,
         function: FunctionType,
@@ -148,13 +149,17 @@ class TriggeredService(BaseService):
     def run_without_provider(self):
         self.proc = Process(
             target=self.function,
-            args=(self.logger, ),
+            args=(self.logger,),
             kwargs=self.kwargs,
         )
         self.proc.start()
         self.proc.join()
 
     def run(self):
+        # TODO: this could be changed so that when a trigger happends
+        # this thread empties the queue and feeds the list into
+        # the function, that way vectorization/batching can be used
+        # to optimize performance
         while not self.exit_event.is_set():
             try:
                 args = self.input_queue.get(block=False)
@@ -163,7 +168,7 @@ class TriggeredService(BaseService):
                 break
             self.proc = Process(
                 target=self.function,
-                args=(self.logger, ) + args,
+                args=(self.logger,) + args,
                 kwargs=self.kwargs,
             )
             self.proc.start()
