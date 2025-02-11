@@ -98,6 +98,11 @@ class Manager:
         self.services = {}
         self.triggers = {}
         self.providers = {}
+        self.component_init_state = {
+            "service": {},
+            "trigger": {},
+            "provider": {},
+        }
         self.component_map = {
             "service": self.services,
             "trigger": self.triggers,
@@ -229,6 +234,30 @@ class Manager:
             component.start()
         return self.status_component(data)
 
+    def set_init_state(self, services: dict = {}, triggers: dict = {}, providers: dict = {}):
+        assert all(
+            isinstance(val, bool) for val in services.values()
+        ), "init state can only be bool"
+        assert all(
+            isinstance(val, bool) for val in triggers.values()
+        ), "init state can only be bool"
+        assert all(
+            isinstance(val, bool) for val in providers.values()
+        ), "init state can only be bool"
+        assert all(
+            key in self.services for key in services.keys()
+        ), "service does not exist in manager"
+        assert all(
+            key in self.triggers for key in triggers.keys()
+        ), "trigger does not exist in manager"
+        assert all(
+            key in self.providers for key in providers.keys()
+        ), "provider does not exist in manager"
+
+        self.component_init_state["service"].update(services)
+        self.component_init_state["trigger"].update(triggers)
+        self.component_init_state["provider"].update(providers)
+
     def start(self):
         """
         Starts the control interface thread, which listens for incoming commands.
@@ -244,27 +273,36 @@ class Manager:
         self.exit_event.set()
         self.interface_thread.join()
 
-    def start_services(self):
+    def start_services(self, init: bool = False):
         """
         Starts all registered services.
         """
         for name, service in self.services.items():
+            if init and name in self.component_init_state["service"]:
+                if not self.component_init_state["service"][name]:
+                    continue
             self.logger.info(f"Starting service {name}")
             service.start()
 
-    def start_triggers(self):
+    def start_triggers(self, init: bool = False):
         """
         Starts all registered triggers.
         """
         for name, trigger in self.triggers.items():
+            if init and name in self.component_init_state["trigger"]:
+                if not self.component_init_state["trigger"][name]:
+                    continue
             self.logger.info(f"Starting trigger {name}")
             trigger.start()
 
-    def start_providers(self):
+    def start_providers(self, init: bool = False):
         """
         Starts all registered providers.
         """
         for name, provider in self.providers.items():
+            if init and name in self.component_init_state["provider"]:
+                if not self.component_init_state["provider"][name]:
+                    continue
             self.logger.info(f"Starting provider {name}")
             provider.start()
 
@@ -299,9 +337,9 @@ class Manager:
         """
         self.logger.info("::run")
         self.start()
-        self.start_services()
-        self.start_providers()
-        self.start_triggers()
+        self.start_services(init=True)
+        self.start_providers(init=True)
+        self.start_triggers(init=True)
 
         try:
             signal.pause()
