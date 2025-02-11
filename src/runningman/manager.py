@@ -272,6 +272,8 @@ class Manager:
         """
         self.exit_event.set()
         self.interface_thread.join()
+        host, port = self.control_address
+        self.server.unbind(f"tcp://{host}:{port}")
 
     def start_services(self, init: bool = False):
         """
@@ -377,21 +379,21 @@ class Manager:
             auth = None
         context.setsockopt(zmq.SocketOption.RCVTIMEO, 1000)
         context.setsockopt(zmq.LINGER, 0)
-        server = context.socket(zmq.REP)
+        self.server = context.socket(zmq.REP)
         if auth is not None:
-            server.plain_server = True
+            self.server.plain_server = True
         host, port = self.control_address
-        server.bind(f"tcp://{host}:{port}")
+        self.server.bind(f"tcp://{host}:{port}")
 
         while not self.exit_event.is_set():
             try:
-                request = server.recv_json()
+                request = self.server.recv_json()
             except zmq.Again:
                 continue
             self.logger.info(f"received {request=}")
             cmd = request["command"]
             if cmd not in self.comand_map:
-                server.send_json({"command": f"command {cmd} does not exist"})
+                self.server.send_json({"command": f"command {cmd} does not exist"})
                 continue
             func = self.comand_map[cmd]
             try:
@@ -399,10 +401,10 @@ class Manager:
             except Exception as e:
                 err_msg = f"command {cmd} failed with {e}"
                 self.logger.exception(err_msg)
-                server.send_json({"command": err_msg})
+                self.server.send_json({"command": err_msg})
                 continue
 
-            server.send_json(response)
+            self.server.send_json(response)
 
         # auth.stop()
         self.logger.debug("Exiting control interface")
