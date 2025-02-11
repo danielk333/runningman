@@ -7,3 +7,4 @@ from .services import Service, TriggeredService
 
 from .manager import Manager, DEFAULT_ADDRESS
 from .client import send_control_message
+from .profiling import make_profile, MPPorfiler

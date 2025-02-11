@@ -7,6 +7,7 @@ import logging
 
 from ..triggers import Trigger
 from ..providers import Provider
+from ..profiling import Porfiler
 from runningman.status import ServiceStatus, process_status
 from runningman import wrappers
 
@@ -109,11 +110,14 @@ class TriggeredService(BaseService):
         function: FunctionType,
         triggers: list[Trigger],
         providers: list[Provider],
+        enable_profiler: bool = False,
         kwargs: dict = {},
     ):
         super().__init__(function, providers, kwargs=kwargs)
         self.triggers = triggers
         self.exit_event = Event()
+        self.enable_profiler = enable_profiler
+        self.profiler = Porfiler()
 
     def start(self):
         if self.status == ServiceStatus.Started:
@@ -152,6 +156,8 @@ class TriggeredService(BaseService):
         self.runner.start()
 
     def run_without_provider(self):
+        if self.enable_profiler:
+            self.profiler.start()
         self.proc = Process(
             target=wrappers.exception_handler(self.function, 0),
             args=(self.logger,),
@@ -159,6 +165,8 @@ class TriggeredService(BaseService):
         )
         self.proc.start()
         self.proc.join()
+        if self.enable_profiler:
+            self.profiler.stop()
 
     def run(self):
         # TODO: this could be changed so that when a trigger happends
@@ -171,6 +179,8 @@ class TriggeredService(BaseService):
             except Empty:
                 self.exit_event.set()
                 break
+            if self.enable_profiler:
+                self.profiler.start()
             self.proc = Process(
                 target=self.function,
                 args=(self.logger,) + args,
@@ -178,3 +188,5 @@ class TriggeredService(BaseService):
             )
             self.proc.start()
             self.proc.join()
+            if self.enable_profiler:
+                self.profiler.stop()
