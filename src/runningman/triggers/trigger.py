@@ -33,6 +33,9 @@ class Trigger:
         if self.status == TriggerStatus.Stopped:
             self.logger.debug("Already stopped")
             return
+        if self.status == TriggerStatus.NotStarted:
+            self.logger.debug("Not started")
+            return
         self.logger.debug("Stopping")
         self.exit_event.set()
         self.runner.join(timeout)

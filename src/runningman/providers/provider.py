@@ -35,6 +35,9 @@ class Provider:
         if self.status == ProviderStatus.Stopped:
             self.logger.debug("Already stopped")
             return
+        if self.status == ProviderStatus.NotStarted:
+            self.logger.debug("Not started")
+            return
         self.logger.debug("Stopping")
         self.proc.terminate()
         self.proc.join()

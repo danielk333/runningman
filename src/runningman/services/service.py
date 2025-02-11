@@ -75,6 +75,9 @@ class Service(BaseService):
         if self.status == ServiceStatus.Stopped:
             self.logger.debug("Already stopped")
             return
+        if self.status == ServiceStatus.NotStarted:
+            self.logger.debug("Not started")
+            return
         self.logger.debug("Stopping")
         for p in self.providers:
             p.queues.remove(self.input_queue)
